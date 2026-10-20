@@ -1,5 +1,7 @@
 # Deploy and Host DeepWiki-Open with Railway
 
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/deepwiki-open-ai-wiki-for-your-repos?referralCode=20H68q)
+
 DeepWiki-Open is an open-source (MIT) tool that reads a GitHub, GitLab or Bitbucket repository and writes an interactive wiki about it: architecture pages, Mermaid diagrams and a chat that answers questions from the code. This community template runs it on one password-protected HTTPS URL with persistent storage.
 
 ## About Hosting DeepWiki-Open
