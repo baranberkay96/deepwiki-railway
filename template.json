@@ -1,0 +1,121 @@
+{
+  "name": "DeepWiki Open AI Wiki for Your Repos",
+  "description": "Turn any GitHub, GitLab or Bitbucket repo into an AI wiki with Q&A.",
+  "category": "AI/ML",
+  "tags": [
+    "deepwiki",
+    "documentation",
+    "wiki",
+    "rag",
+    "code-understanding",
+    "llm",
+    "github",
+    "mermaid"
+  ],
+  "image": "https://cdn.jsdelivr.net/npm/lucide-static@1.59.0/icons/book-open-text.svg",
+  "upstream": {
+    "repo": "AsyncFuncAI/deepwiki-open",
+    "version": "main @ d92819a (2026-09-03; no releases or tags) = ghcr.io/asyncfuncai/deepwiki-open:sha-d92819a",
+    "checked": "2026-10-20"
+  },
+  "services": {
+    "DeepWiki": {
+      "icon": "https://cdn.jsdelivr.net/npm/lucide-static@1.59.0/icons/book-open-text.svg",
+      "source": {
+        "repo": "baranberkay96/deepwiki-railway",
+        "rootDirectory": "/services/deepwiki"
+      },
+      "startCommand": null,
+      "preDeployCommand": null,
+      "healthcheckPath": "/health",
+      "healthcheckTimeout": 300,
+      "restartPolicyType": "ON_FAILURE",
+      "restartPolicyMaxRetries": 5,
+      "numReplicas": 1,
+      "cronSchedule": null,
+      "publicDomain": true,
+      "targetPort": 8080,
+      "tcpProxy": null,
+      "volume": {
+        "mountPath": "/root/.adalflow"
+      },
+      "variables": {
+        "PORT": {
+          "defaultValue": "8080",
+          "description": "Public port (Caddy). Railway health-checks /health here; UI and API stay on localhost.",
+          "required": false
+        },
+        "BASIC_AUTH_USERNAME": {
+          "defaultValue": "admin",
+          "description": "Login name for the DeepWiki UI and API (letters, digits, . _ @ -).",
+          "required": false
+        },
+        "BASIC_AUTH_PASSWORD": {
+          "defaultValue": "${{secret(32, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\")}}",
+          "description": "Login password (generated; read it here). Everything except /health requires it.",
+          "required": false
+        },
+        "OPENAI_API_KEY": {
+          "defaultValue": "",
+          "description": "Required. OpenAI key for wiki/chat generation and embeddings. Gemini only? Enter none.",
+          "required": true
+        },
+        "GOOGLE_API_KEY": {
+          "defaultValue": "",
+          "description": "Optional. Gemini API key; used for generation and embeddings when OPENAI_API_KEY is none.",
+          "required": false
+        },
+        "OPENROUTER_API_KEY": {
+          "defaultValue": "",
+          "description": "Optional. Adds OpenRouter models to the UI (embeddings still need OpenAI or Gemini).",
+          "required": false
+        },
+        "OLLAMA_HOST": {
+          "defaultValue": "",
+          "description": "Optional. URL of your own Ollama server (e.g. http://ollama.railway.internal:11434).",
+          "required": false
+        },
+        "DEEPWIKI_PROVIDER": {
+          "defaultValue": "auto",
+          "description": "Provider preselected in the UI: auto (first key set), openai, google, openrouter, ollama.",
+          "required": false
+        },
+        "DEEPWIKI_MODEL": {
+          "defaultValue": "",
+          "description": "Optional default model id for that provider. Empty: gpt-6-luna / gemini-3.8-flash.",
+          "required": false
+        },
+        "DEEPWIKI_EMBEDDER_TYPE": {
+          "defaultValue": "",
+          "description": "Embeddings: empty = auto (openai, google or ollama). Changing it needs a re-index.",
+          "required": false
+        },
+        "DEEPWIKI_AUTH_MODE": {
+          "defaultValue": "false",
+          "description": "true = UI also asks DEEPWIKI_AUTH_CODE before generating/deleting. Not a login.",
+          "required": false
+        },
+        "DEEPWIKI_AUTH_CODE": {
+          "defaultValue": "${{secret(16, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\")}}",
+          "description": "Code for DEEPWIKI_AUTH_MODE (generated). Only used when that mode is true.",
+          "required": false
+        },
+        "DEEPWIKI_CPU_THREADS": {
+          "defaultValue": "",
+          "description": "Optional. FAISS/numpy threads; empty = from the service CPU limit, max 8.",
+          "required": false
+        },
+        "DEEPWIKI_MAX_CONCURRENT_WIKI_TASKS": {
+          "defaultValue": "",
+          "description": "Optional. Wikis generated at the same time; empty = half the CPU limit (min 1).",
+          "required": false
+        },
+        "RAILWAY_DEPLOYMENT_DRAINING_SECONDS": {
+          "defaultValue": "15",
+          "description": "Shutdown grace so open chats and streams close cleanly on redeploy.",
+          "required": false
+        }
+      }
+    }
+  }
+}

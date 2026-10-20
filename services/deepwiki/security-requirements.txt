@@ -1,0 +1,6 @@
+# Installed over upstream's lock (gitpython 3.1.58) in the runtime image, --no-deps.
+# GHSA-239g-whfq-7xj9 (high): a cloned repository's tracked files can make GitPython
+# pick the wrong git directory and run attacker-controlled hooks; fixed in 3.1.60.
+# DeepWiki clones arbitrary repositories, so this matters. 3.1.61 is within
+# upstream's declared range (^3.1.58) and needs gitdb>=4.0.1,<5 (image has 4.0.12).
+gitpython==3.1.61 --hash=sha256:8ab28c9da863cdd9e7d7694ec46cf3e6c9a12d8a30a1acd3447aec11975d530c

@@ -1,0 +1,77 @@
+# DeepWiki public edge (the only port Railway exposes).
+#   127.0.0.1:3000  Next.js UI (and its /api/* proxy routes to the Python API)
+#   127.0.0.1:8001  DeepWiki Python API (FastAPI; WebSockets under /ws/*)
+# DeepWiki has no real login (DEEPWIKI_AUTH_MODE is checked only for cache deletion),
+# and every wiki, chat and codemap request spends the owner's LLM credits, so
+# everything except the health probe requires HTTP basic auth.
+{
+	admin off
+	persist_config off
+	auto_https off
+	servers {
+		# Railway's edge terminates TLS and forwards X-Forwarded-* headers.
+		trusted_proxies static private_ranges 100.0.0.0/8
+	}
+}
+
+:{$PORT:8080} {
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy same-origin
+		X-Frame-Options SAMEORIGIN
+		-Server
+	}
+
+	# Browsers resend cached basic-auth credentials to this site even when another
+	# website starts the request; refuse those on endpoints that spend credits.
+	@cross_site {
+		path /api/* /ws/* /export/*
+		header Sec-Fetch-Site cross-site
+		header Sec-Fetch-Site same-site
+	}
+
+	# WebSocket handshakes may carry this cookie instead of basic-auth credentials
+	# (some browsers do not send cached credentials on WebSocket upgrades).
+	@ws_session {
+		path /ws/*
+		header Cookie *deepwiki_ws={$WS_SESSION_TOKEN}*
+	}
+
+	@html header Accept *text/html*
+
+	# `route` keeps the directives below in the written order.
+	route {
+		# Railway healthcheck: API readiness, no login (static JSON, nothing sensitive).
+		reverse_proxy /health 127.0.0.1:8001
+
+		# Local-path repositories cannot be used on Railway, and this upstream endpoint
+		# lists any directory of the server, so it is switched off.
+		respond /local_repo/* "Local repositories are not available on this deployment" 404
+
+		# DeepWiki does not use Next.js image optimization; keep that endpoint closed.
+		respond /_next/image* 404
+
+		respond @cross_site "Cross-site requests are not allowed" 403
+
+		reverse_proxy @ws_session 127.0.0.1:8001
+
+		basic_auth bcrypt DeepWiki {
+			{$BASIC_AUTH_USERNAME} {$BASIC_AUTH_HASH}
+		}
+
+		# After a successful login, hand the browser the WebSocket session cookie.
+		header @html +Set-Cookie "deepwiki_ws={$WS_SESSION_TOKEN}; Path=/ws; Max-Age=2592000; HttpOnly; Secure; SameSite=Strict"
+
+		# Chat and codemap WebSockets go straight to the API.
+		reverse_proxy /ws/* 127.0.0.1:8001 {
+			header_up -Authorization
+		}
+
+		# Everything else is the Next.js app; its server-side routes call the API.
+		reverse_proxy 127.0.0.1:3000 {
+			header_up -Authorization
+			# Repo indexing, wiki progress and chat answers are streamed (SSE).
+			flush_interval -1
+		}
+	}
+}
